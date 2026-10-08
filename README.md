@@ -1,10 +1,10 @@
-# Volant-GT
+# OmniDeck
 
 <p align="center">
-  <img src="https://i.pinimg.com/originals/b1/57/56/b1575685d66ef6517e4a9eddaf9dc7ea.png" width="1080" alt="Volant-GT Icon">
+  <img src="https://i.pinimg.com/originals/b1/57/56/b1575685d66ef6517e4a9eddaf9dc7ea.png" width="1080" alt="OmniDeck Icon">
 </p>
 
-Bem-vindo ao **Volant-GT**, uma solução completa para utilizar seu dispositivo Android como um controle virtual ou volante para Linux, utilizando conexões WebSocket de baixa latência e emulação de input no kernel (`uinput`).
+Bem-vindo ao **OmniDeck**, uma solução completa para utilizar seu dispositivo Android como um controle virtual ou volante para Linux, utilizando conexões WebSocket de baixa latência e emulação de input no kernel (`uinput`).
 
 ## 📌 Visão Geral
 O projeto é composto de duas partes essenciais:
