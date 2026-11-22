@@ -108,7 +108,7 @@ KV = """
         padding: dp(50)
         spacing: dp(25)
         Label:
-            text: "VOLANT CONTROLLER"
+            text: "Omnideck"
             font_size: '36sp'
             color: (0.94, 0.94, 0.94, 1)
             bold: True

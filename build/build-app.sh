@@ -54,13 +54,13 @@ buildozer init
 
 cat > buildozer.spec << 'SPEC_EOF'
 [app]
-title = Volant GT
-package.name = volant
-package.domain = org.volant
+title = OmniDeck
+package.name = omnideck
+package.domain = org.omnideck
 source.dir = .
 source.include_exts = py,png,jpg,kv,atlas
 version = 2.0.2
-requirements = python3,kivy==2.2.0,plyer,websocket-client
+requirements = python3,kivy==2.3.1,plyer,websocket-client
 icon.filename = %(source.dir)s/icon.png
 orientation = landscape
 fullscreen = 1
@@ -70,6 +70,8 @@ android.minapi = 21
 android.ndk = 25b
 android.archs = arm64-v8a
 android.accept_sdk_license = True
+p4a.branch = master
+p4a.commit = b6d734c3f431464ff846a2b575be1a7a60e8833f
 
 [buildozer]
 log_level = 2
@@ -83,8 +85,8 @@ echo "Finalizando pacotes..."
 APK_ORIGIN=$(find bin -name "*.apk" | head -n 1)
 
 if [ -n "$APK_ORIGIN" ]; then
-    cp "$APK_ORIGIN" "$ORIGIN_DIR/Volant GT.apk"
-    echo "Sucesso: 'Volant GT.apk' gerado em: $ORIGIN_DIR"
+    cp "$APK_ORIGIN" "$ORIGIN_DIR/OmniDeck.apk"
+    echo "Sucesso: 'OmniDeck.apk' gerado em: $ORIGIN_DIR"
     # Limpeza opcional do diretorio temporario
     # rm -rf "$BUILD_DIR"
 else

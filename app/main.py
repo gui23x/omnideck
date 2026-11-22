@@ -135,7 +135,7 @@ KV = """
         padding: dp(50)
         spacing: dp(25)
         Label:
-            text: "VOLANT CONTROLLER"
+            text: "Omnideck"
             font_size: '36sp'
             color: (0.94, 0.94, 0.94, 1)
             bold: True
@@ -569,7 +569,7 @@ class InterfacePrincipal(Screen):
         self.enviar("abs", py, y)
 
 
-class VolantApp(App):
+class OmniDeckApp(App):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.ws = None
@@ -662,4 +662,4 @@ class VolantApp(App):
 
 if __name__ == "__main__":
     Builder.load_string(KV)
-    VolantApp().run()
+    OmniDeckApp().run()

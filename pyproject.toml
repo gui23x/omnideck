@@ -1,18 +1,26 @@
 [project]
-name = "volant-gt"
+name = "omnideck"
 version = "2.2.0"
-description = "Aplicativo mobile e servidor Linux para transformar o celular num controle virtual ou volante."
+description = "App Android e servidor Linux para transformar o celular em um controle virtual."
 authors = [
     {name = "Gui23x", email = "guigomes4330@gmail.com"},
 ]
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "buildozer>=1.5.0",
-    "cython>=3.2.4",
     "evdev>=1.9.3",
+    "websockets>=16.0",
+]
+
+[project.optional-dependencies]
+app = [
     "kivy>=2.3.1",
     "plyer>=2.1.0",
-    "pyside6>=6.11.0",
-    "websockets>=16.0",
+    "websocket-client>=1.8.0",
+]
+
+[dependency-groups]
+android = [
+    "buildozer>=1.5.0",
+    "cython>=3.2.4",
 ]

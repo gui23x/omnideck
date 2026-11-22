@@ -8,7 +8,7 @@ APP_NAME="volant-server"
 VERSION="2.0"
 ARCH="all"
 MAINTAINER="Gui23x guigomes4330@gmail.com"
-DESC="Servidor de Controle Volant via WebSocket e UInput"
+DESC="Servidor de controle OmniDeck via WebSocket e UInput"
 
 # Garante que o script rode a partir da raiz do projeto
 cd "$(dirname "$0")/.." || exit
@@ -43,7 +43,7 @@ Package: $APP_NAME
 Version: $VERSION
 Architecture: $ARCH
 Maintainer: $MAINTAINER
-Depends: python3, python3-gi, python3-evdev, python3-websockets, policykit-1, gir1.2-rsvg-2.0
+Depends: python3, python3-gi, gir1.2-gtk-3.0, python3-evdev, python3-websockets, policykit-1
 Section: utils
 Priority: optional
 Description: $DESC
@@ -64,8 +64,8 @@ chmod +x "$BUILD_DIR/usr/bin/$APP_NAME"
 
 cat > "$BUILD_DIR/usr/share/applications/$APP_NAME.desktop" << EOF
 [Desktop Entry]
-Name=Volant Server
-Comment=Servidor para Joystick Virtual Android
+Name=OmniDeck Server
+Comment=Servidor de controle virtual OmniDeck para Android
 Exec=/usr/bin/$APP_NAME
 Icon=$APP_NAME
 Terminal=false

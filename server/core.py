@@ -1,16 +1,18 @@
-import sys
-import socket
-import time
-import json
-import threading
 import asyncio
+import json
+import logging
+import socket
+import sys
+import threading
+from collections.abc import Callable
+
+from evdev import AbsInfo, UInput, ecodes as e
 import websockets
-from evdev import UInput, ecodes as e, AbsInfo
-from PySide6.QtCore import QThread, Signal, QObject
 
 BROADCAST_PORT = 5000
 WEBSOCKET_PORT = 8080
 DEVICE_NAME = "Microsoft X-Box 360 pad"
+logger = logging.getLogger(__name__)
 
 ABS_RANGE_STICK = AbsInfo(
     value=0, min=-32768, max=32767, fuzz=16, flat=128, resolution=0
@@ -89,39 +91,36 @@ def get_local_ip() -> str:
         s.close()
 
 
-class ServerSignals(QObject):
-    stage_update = Signal(str)
-    log_entry = Signal(str, str, str)
-
-
-class ServerThread(QThread):
-    def __init__(self, signals: ServerSignals, virtual_pad):
-        super().__init__()
-        self._signals = signals
+class ServerThread(threading.Thread):
+    def __init__(self, on_status: Callable[[str], None], virtual_pad: UInput):
+        super().__init__(name="OmniDeckServer", daemon=True)
+        self._on_status = on_status
         self.ui = virtual_pad
-        self._is_running = True
+        self._running = threading.Event()
+        self._running.set()
         self._loop: asyncio.AbstractEventLoop | None = None
         self._stop_event: asyncio.Event | None = None
 
     def run(self):
         self._loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self._loop)
-        threading.Thread(target=self._broadcast_presence, daemon=True).start()
+        self._stop_event = asyncio.Event()
+        if not self._running.is_set():
+            self._stop_event.set()
 
-        local_ip = get_local_ip()
-        self._signals.stage_update.emit("wifi")
-        time.sleep(0.3)
-        self._signals.stage_update.emit("ws")
-        time.sleep(0.3)
-        self._signals.stage_update.emit("uinput")
-        self._signals.log_entry.emit(
-            "network", "Server Active", f"{local_ip}:{WEBSOCKET_PORT}"
-        )
-
-        self._loop.run_until_complete(self._run_server())
+        threading.Thread(
+            target=self._broadcast_presence,
+            name="OmniDeckPresence",
+            daemon=True,
+        ).start()
+        try:
+            self._loop.run_until_complete(self._run_server())
+        except Exception:
+            logger.exception("The OmniDeck server stopped unexpectedly")
+        finally:
+            self._loop.close()
 
     async def _run_server(self):
-        self._stop_event = asyncio.Event()
         async with websockets.serve(self._handle_client, "0.0.0.0", WEBSOCKET_PORT):
             await self._stop_event.wait()
 
@@ -136,32 +135,41 @@ class ServerThread(QThread):
                 "type": "volant_server",
             }
         ).encode()
-        while self._is_running:
+        while self._running.is_set():
             try:
                 udp.sendto(payload, ("<broadcast>", BROADCAST_PORT))
-                time.sleep(2)
-            except Exception:
-                time.sleep(5)
+                self._running.wait(2)
+            except OSError:
+                logger.exception("Unable to broadcast server presence")
+                self._running.wait(5)
+        udp.close()
 
     async def _handle_client(self, websocket):
-        client_ip = websocket.remote_address[0]
-        self._signals.stage_update.emit("device")
-        self._signals.log_entry.emit("connect", "Client Connected", client_ip)
+        self._on_status("Sucesso")
+        is_running = False
         try:
             async for message in websocket:
-                data = json.loads(message)
-                code_str, value, msg_type = (
-                    data.get("code"),
-                    int(data.get("value", 0)),
-                    data.get("type"),
-                )
-                if msg_type == "key" and (
-                    code := BUTTON_MAP.get(code_str) or getattr(e, code_str, None)
-                ):
+                try:
+                    data = json.loads(message)
+                    code_str = data.get("code")
+                    value = int(data.get("value", 0))
+                    msg_type = data.get("type")
+                except (json.JSONDecodeError, TypeError, ValueError) as ex:
+                    logger.warning("Ignoring invalid controller input: %s", ex)
+                    continue
+
+                if not isinstance(code_str, str):
+                    continue
+
+                if msg_type == "key":
+                    code = BUTTON_MAP.get(code_str) or getattr(e, code_str, None)
+                    if code is None:
+                        continue
                     self.ui.write(e.EV_KEY, code, value)
-                    self.ui.syn()
-                elif msg_type == "abs" and hasattr(e, code_str):
-                    code = getattr(e, code_str)
+                elif msg_type == "abs":
+                    code = getattr(e, code_str, None)
+                    if code is None:
+                        continue
                     self.ui.write(
                         e.EV_ABS,
                         code,
@@ -171,13 +179,22 @@ class ServerThread(QThread):
                             else value
                         ),
                     )
-                    self.ui.syn()
+                else:
+                    continue
+
+                self.ui.syn()
+                if not is_running:
+                    is_running = True
+                    self._on_status("Rodando...")
         except Exception:
-            pass
+            logger.exception("Controller connection failed")
         finally:
-            self._signals.log_entry.emit("disconnect", "Client Disconnected", client_ip)
+            self._on_status("Não conectado")
 
     def stop(self):
-        self._is_running = False
+        self._running.clear()
         if self._loop and self._stop_event:
-            self._loop.call_soon_threadsafe(self._stop_event.set)
+            if self._loop.is_running():
+                self._loop.call_soon_threadsafe(self._stop_event.set)
+            elif not self._loop.is_closed():
+                self._stop_event.set()

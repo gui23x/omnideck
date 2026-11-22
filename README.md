@@ -9,7 +9,7 @@ Bem-vindo ao **OmniDeck**, uma solução completa para utilizar seu dispositivo 
 ## 📌 Visão Geral
 O projeto é composto de duas partes essenciais:
 1. **App Mobile (Android)**: Interface construída em Kivy, capturando toques na tela e dados do giroscópio.
-2. **Servidor (Linux)**: Aplicação PyQt6/PySide6 rodando em modo `root` (via `pkexec`) que emula um controle de Xbox 360 através do `evdev/uinput`.
+2. **Servidor (Linux)**: Aplicação GTK 3 nativa que roda em modo `root` (via `pkexec`) e emula um controle de Xbox 360 através do `evdev/uinput`.
 
 ## 📂 Estrutura do Projeto
 A base de código foi refatorada e organizada de forma modular para fácil manutenção.
@@ -23,46 +23,41 @@ A base de código foi refatorada e organizada de forma modular para fácil manut
   - `main-server.py`
   - `__init__.py`
   - `core.py`
-  - `ui_components.py`
-  - `build-server.sh`
 - `assets/images/`
 - `build/`
   - `build-app.sh`
 
 ## ⚙️ Requisitos e Dependências
 
-O projeto usa a ferramenta **`uv`** para um gerenciamento super-rápido de pacotes e ambientes Python.
+O projeto usa **`uv`** para gerenciar as dependências Python. A interface do servidor usa GTK 3 e os pacotes do sistema, sem instalar bindings Qt ou empacotar uma toolkit gráfica via pip.
 
 ### Dependências do Sistema (Linux)
-O servidor requer algumas bibliotecas do sistema para interface gráfica e manipulação de entrada. Caso não as tenha, execute:
+O servidor requer GTK 3, PyGObject, `evdev` e `websockets`. No Debian/Ubuntu, instale os pacotes do sistema:
 ```bash
 sudo apt update
-sudo apt install libqt6gui6 libqt6widgets6 libqt6core6 policykit-1 -y
-sudo apt install python3-pip python3-tk -y
-sudo pip install "evdev>=1.9.3" "kivy>=2.3.1" "plyer>=2.1.0" "pyside6>=6.11.0" "websockets>=16.0"
+sudo apt install python3 python3-gi gir1.2-gtk-3.0 python3-evdev python3-websockets policykit-1
 ```
 
 ## 🚀 Build e Execução
 
 **1. Configurar o Ambiente Virtual (usando `uv`)**
-Crie e ative seu ambiente virtual na raiz do projeto:
+Para desenvolver o app Android, crie o ambiente com as dependências opcionais do app e as ferramentas de build:
 ```bash
-uv venv .venv
-source .venv/bin/activate
-uv pip install -r requirements.txt
+uv sync --extra app --group android
 ```
 
 **2. Rodar o App Mobile**
 ```bash
-uv run app/main.py
+uv run --extra app app/main.py
 ```
 
 **3. Rodar o Servidor**
 ```bash
-sudo apt install libqt6gui6 libqt6widgets6 libqt6core6
-uv run server/main-server.py
+uv run --no-project --python /usr/bin/python3 server/main-server.py
 ```
 
+O comando usa o Python do sistema para que o servidor encontre o GTK instalado pelo `apt` (`gi` não é um pacote PyPI). Ele solicita elevação via `pkexec`. Para usar somente o servidor, `uv sync` instala apenas `evdev` e `websockets`; a interface GTK 3 permanece fornecida pelos pacotes do sistema.
+
 **4. Gerar as Builds**
-- App Android: `bash build/build-app.sh`
+- App Android (gera `OmniDeck.apk`): `bash build/build-app.sh`
 - Servidor Debian: `bash build/build-server.sh`
